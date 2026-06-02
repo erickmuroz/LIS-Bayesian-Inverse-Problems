@@ -41,9 +41,29 @@ grid off;
 
 %% test fd_solver against bs_pricer
 sigma_flat = @(S,t) 0.20; %constant sigma assumption of closed form
+%later instead of this "flat constant" value we will have sigma_func as  a
+%2D matrix of vol values at every (S,t) grid point
+
+
 N_S = 200;
 N_t = 200;
 
 price_fd = fd_solver(S0, K, r, T, sigma_flat, N_S, N_t)
 price_bs = bs_pricer(S0, K, r, 0.20, T)
 %correct fd_solver
+
+%% True volatility surface 
+[sigma_func_true, theta_true, S_vol_grid, t_vol_grid] = build_sigma(S0);
+
+[S_mat, t_mat] = meshgrid(S_vol_grid, t_vol_grid);
+Sigma_mat = reshape(theta_true, length(t_vol_grid), length(S_vol_grid));
+
+figure;
+surf(S_vol_grid, t_vol_grid, Sigma_mat);
+xlabel('Stock price $S$', 'Interpreter', 'latex', 'FontSize', 13);
+ylabel('Time $t$', 'Interpreter', 'latex', 'FontSize', 13);
+zlabel('$\sigma(S,t)$', 'Interpreter', 'latex', 'FontSize', 13);
+title('True local volatility surface $\theta_{\rm true}$', ...
+    'Interpreter', 'latex', 'FontSize', 14);
+colorbar;
+set(gca, 'FontSize', 11, 'Box', 'off');
