@@ -1,4 +1,4 @@
-%% Closed-form formula for Call prices 
+%% Closed-form formula for Call prices (testing)
 % simplest possible piece, introducing a bit the inputs of what the formula
 % will do
 %% Inputs
