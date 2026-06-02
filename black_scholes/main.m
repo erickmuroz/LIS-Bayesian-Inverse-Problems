@@ -88,3 +88,15 @@ set(gca, 'FontSize', 11);
 
 save('G_matrix.mat', 'G_bs', 'F0', 'contracts','theta_star', 'S_vol_grid', 't_vol_grid');
 fprintf('G saved.\n');
+
+%% Build prior
+Gamma_pr = build_prior(S_vol_grid, t_vol_grid);
+
+figure;
+imagesc(Gamma_pr);
+colorbar;
+xlabel('Parameter index $j$', 'Interpreter', 'latex', 'FontSize', 13);
+ylabel('Parameter index $k$', 'Interpreter', 'latex', 'FontSize', 13);
+title('Prior covariance $\Gamma_{pr}$ (squared exponential kernel)', ...
+    'Interpreter', 'latex', 'FontSize', 14);
+set(gca, 'FontSize', 11);
