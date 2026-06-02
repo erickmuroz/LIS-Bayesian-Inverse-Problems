@@ -63,7 +63,28 @@ surf(S_vol_grid, t_vol_grid, Sigma_mat);
 xlabel('Stock price $S$', 'Interpreter', 'latex', 'FontSize', 13);
 ylabel('Time $t$', 'Interpreter', 'latex', 'FontSize', 13);
 zlabel('$\sigma(S,t)$', 'Interpreter', 'latex', 'FontSize', 13);
-title('True local volatility surface $\theta_{\rm true}$', ...
-    'Interpreter', 'latex', 'FontSize', 14);
+title('True local volatility surface $\theta_{\rm true}$','Interpreter', 'latex', 'FontSize', 14);
 colorbar;
 set(gca, 'FontSize', 11, 'Box', 'off');
+
+%% Build G
+theta_star = 0.20 * ones(25, 1);
+N_S = 200;
+N_t = 200;
+
+fprintf('Starting G computation...\n');
+tic
+[G_bs, F0, contracts] = build_G(S0, r, theta_star,S_vol_grid, t_vol_grid, N_S, N_t);
+t_elapsed = toc;
+fprintf('G built in %.1f seconds.\n', t_elapsed);
+
+figure;
+imagesc(G_bs);
+colorbar;
+xlabel('Parameter index $j$ (vol surface point)','Interpreter', 'latex', 'FontSize', 13);
+ylabel('Contract index $i$', 'Interpreter', 'latex', 'FontSize', 13);
+title('Jacobian $G_{ij} = \partial C_i / \partial \sigma_j$','Interpreter', 'latex', 'FontSize', 14);
+set(gca, 'FontSize', 11);
+
+save('G_matrix.mat', 'G_bs', 'F0', 'contracts','theta_star', 'S_vol_grid', 't_vol_grid');
+fprintf('G saved.\n');
