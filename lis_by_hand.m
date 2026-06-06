@@ -5,27 +5,28 @@
 
 clear all 
 clc
+addpath('black_scholes/src/')
 
 
 
 %% 1. dimensions, defining where x and y will live R^
-n = 6;
-m = 4;
+n =  25; %vol surface parameters
+m = 15 %option price observations
 
 %% 2. matrices
 %G (m x n) mapping parameter to observations (x-> y)
-rng(42)
-G = randn(m,n);
+% NEW - Black Scholes inputs 
+load('black_scholes/G_matrix.mat');
 
-%Gamma_pr (n x n)
-%requirement of SPD, built as A'A + I to guarantee - no physical knowledge
-%of the parameters 
-A = randn(n,n);
-Gamma_pr = A'*A + eye(n);
+G = G_bs;
+Gamma_pr = build_prior(S_vol_grid, t_vol_grid); %25x25
+Gamma_obs = (0.5)^2 * eye(m); %%revisar
 
-%Gamma_obs (m x m)
-Gamma_obs = diag([0.5, 0.5, 10.0, 10.0]);
-
+%synthetic observations theta_true
+[~, theta_true, S_vol_grid, t_vol_grid] = build_sigma(S0);
+noise_std = 0.5;
+rng(42);
+y = F0 + G_bs*(theta_true - theta_star) + noise_std*randn(m,1);
 %% 3. exact posterior covariance
 Gamma_obs_inv = diag(1./diag(Gamma_obs));
 H = G' * Gamma_obs_inv * G; %hessian of (-)log-likelihood
