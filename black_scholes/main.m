@@ -68,7 +68,10 @@ colorbar;
 set(gca, 'FontSize', 11, 'Box', 'off');
 
 %% Build G
-theta_star = 0.20 * ones(25, 1);
+clear K T sigma
+n = length(theta_true);
+r=0.05;
+theta_star = 0.20 * ones(n, 1);
 N_S = 200;
 N_t = 200;
 

@@ -7,16 +7,20 @@ clear all; clc;
 addpath('src/')
  
 %% parameters
-S0 = 100;
-r  = 0.05;
+%two market parameters that are fixed and known
+S0 = 100;  %all strikes and vol grids points are defined relative to this
+r  = 0.05; %annual risk free rate 
  
 %% 1. true vol surface
+% establishes the ground truth/reference, i.e. the vol surface you are
+% trying to infer
 [~, theta_true, S_vol_grid, t_vol_grid] = build_sigma(S0);
 n = length(theta_true);
  
 %% 2. build G (or load if already saved)
-theta_star = 0.20 * ones(n, 1);
-N_S = 200; N_t = 200;
+%computes the linearized Forward operator G
+theta_star = 0.20 * ones(n, 1); %linearization point at flat surface (0.2), consider to change it 
+N_S = 200; N_t = 200; %grid resolution
  
 if exist('G_matrix.mat', 'file')
     fprintf('Loading saved G...\n');
@@ -30,26 +34,28 @@ else
 end
  
 %% 3. inputs for LIS
+% constructing the three inputs for bip, 
 m = size(G_bs, 1);
-G = G_bs;
+G = G_bs; %Jacobian as the forward operator
  
 % Prior
 Gamma_pr = build_prior(S_vol_grid, t_vol_grid);
  
 % Observation noise
-noise_std  = 1.0;
-Gamma_obs  = noise_std^2 * eye(m);
+noise_std  = 1.0; 
+Gamma_obs  = noise_std^2 * eye(m); %assuming all contracts have the same noise level
  
 % Synthetic observations from linearized model
 rng(42);
 y = F0 + G_bs*(theta_true - theta_star) + noise_std*randn(m,1);
  
-%% 4. exact posterior covariance
+%% 4. exact posterior covariance + mean
 Gamma_obs_inv = (1/noise_std^2) * eye(m);
 H             = G' * Gamma_obs_inv * G;    %hessian of (-)log-likelihood
 Gamma_pr_inv  = inv(Gamma_pr);
 Gamma_pos     = inv(H + Gamma_pr_inv);
- 
+
+mu_pos = theta_star + Gamma_pos * G' * Gamma_obs_inv * (y - F0);
 %% 5. generalized EV problem (SVD -- Remark 4)
 %cholesky of Gamma_pr - assuming square root factorization
 S_pr      = chol(Gamma_pr, 'lower');       %st. Gamma_pr = S_pr * S_pr'
@@ -89,7 +95,7 @@ for r = 1:r_max
 end
  
 %% 8. optimal projector (Corollary 3.2)
-r_plot  = 3;                               %choose rank based on eigenvalue spectrum
+r_plot = sum(delta.^2 >1);                               %choose rank based on eigenvalue spectrum
 W_tilde = Gamma_pr_inv * W_hat;
  
 P_r = zeros(n, n);
@@ -212,24 +218,71 @@ xlabel('$j$', 'Interpreter', 'latex');
 title(['LIS approx $\hat{\Gamma}_{pos},\ r=' num2str(r_plot) '$'], ...
       'Interpreter', 'latex', 'FontSize', 13);
 
-%test
+%% Plot 5: Diagonal variance comparison
 figure;
-plot(diag(Gamma_pr),    'b-o', 'LineWidth', 1.5); hold on;
-plot(diag(Gamma_pos),   'r-o', 'LineWidth', 1.5);
-plot(diag(Gamma_pos_approx_all{r_plot}), 'g--', 'LineWidth', 1.5);
-legend('Prior variance', 'Posterior variance', 'LIS approx', ...
-    'Interpreter', 'latex');
+plot(diag(Gamma_pr),  'b-o', 'LineWidth', 1.5, ...
+    'MarkerFaceColor', [0.2 0.2 0.8]); 
+hold on;
+plot(diag(Gamma_pos), 'r-o', 'LineWidth', 1.5, ...
+    'MarkerFaceColor', [0.8 0.2 0.2]);
+xline(5.5,  '--', 'Color', [0.5 0.5 0.5], 'LineWidth', 1);
+xline(10.5, '--', 'Color', [0.5 0.5 0.5], 'LineWidth', 1);
+xline(15.5, '--', 'Color', [0.5 0.5 0.5], 'LineWidth', 1);
+xline(20.5, '--', 'Color', [0.5 0.5 0.5], 'LineWidth', 1);
+text(3,  max(diag(Gamma_pr))*1.02, '$t=0.25$', 'Interpreter','latex','FontSize',10);
+text(8,  max(diag(Gamma_pr))*1.02, '$t=0.50$', 'Interpreter','latex','FontSize',10);
+text(13, max(diag(Gamma_pr))*1.02, '$t=1.00$', 'Interpreter','latex','FontSize',10);
+text(18, max(diag(Gamma_pr))*1.02, '$t=1.50$', 'Interpreter','latex','FontSize',10);
+text(23, max(diag(Gamma_pr))*1.02, '$t=2.00$', 'Interpreter','latex','FontSize',10);
+legend('Prior variance', 'Posterior variance', 'Interpreter', 'latex', 'FontSize', 12);
 xlabel('Parameter index $j$', 'Interpreter', 'latex', 'FontSize', 13);
-ylabel('Variance $\sigma^2_j$',  'Interpreter', 'latex', 'FontSize', 13);
+ylabel('Variance $\sigma^2_j$', 'Interpreter', 'latex', 'FontSize', 13);
 title('Uncertainty per vol surface parameter', ...
     'Interpreter', 'latex', 'FontSize', 14);
 box off; set(gca, 'FontSize', 12);
 
-figure;
+%% Plot 6: Variance reduction bar chart
 var_reduction = 1 - diag(Gamma_pos)./diag(Gamma_pr);
+
+figure;
 bar(var_reduction, 'FaceColor', [0.2 0.2 0.6], 'EdgeColor', 'none');
+hold on;
+xline(5.5,  '--', 'Color', [0.5 0.5 0.5], 'LineWidth', 1);
+xline(10.5, '--', 'Color', [0.5 0.5 0.5], 'LineWidth', 1);
+xline(15.5, '--', 'Color', [0.5 0.5 0.5], 'LineWidth', 1);
+xline(20.5, '--', 'Color', [0.5 0.5 0.5], 'LineWidth', 1);
+text(3,  1.05, '$t=0.25$', 'Interpreter','latex','FontSize',10);
+text(8,  1.05, '$t=0.50$', 'Interpreter','latex','FontSize',10);
+text(13, 1.05, '$t=1.00$', 'Interpreter','latex','FontSize',10);
+text(18, 1.05, '$t=1.50$', 'Interpreter','latex','FontSize',10);
+text(23, 1.05, '$t=2.00$', 'Interpreter','latex','FontSize',10);
 xlabel('Parameter index $j$', 'Interpreter', 'latex', 'FontSize', 13);
 ylabel('Variance reduction', 'Interpreter', 'latex', 'FontSize', 13);
-title('Relative uncertainty reduction per parameter', ...
+title('Relative uncertainty reduction per vol surface parameter', ...
     'Interpreter', 'latex', 'FontSize', 14);
-ylim([0 1]); box off; set(gca, 'FontSize', 12);
+ylim([0 1.1]); box off; set(gca, 'FontSize', 12);
+
+
+%mean
+
+figure;
+t5 = tiledlayout(1,3,'Padding','compact','TileSpacing','compact');
+
+nexttile;
+surf(S_vol_grid, t_vol_grid, reshape(theta_true, length(t_vol_grid), length(S_vol_grid)));
+title('True $\theta_{\rm true}$','Interpreter','latex','FontSize',13);
+xlabel('$S$','Interpreter','latex'); ylabel('$t$','Interpreter','latex');
+zlabel('$\sigma(S,t)$','Interpreter','latex'); zlim([0.18 0.42]);
+
+nexttile;
+surf(S_vol_grid, t_vol_grid, reshape(mu_pos, length(t_vol_grid), length(S_vol_grid)));
+title('Recovered $\mu_{pos}$','Interpreter','latex','FontSize',13);
+xlabel('$S$','Interpreter','latex'); ylabel('$t$','Interpreter','latex');
+zlabel('$\sigma(S,t)$','Interpreter','latex'); zlim([0.18 0.42]);
+
+nexttile;
+surf(S_vol_grid, t_vol_grid, reshape(mu_pos - theta_true, length(t_vol_grid), length(S_vol_grid)));
+title('Error $\mu_{pos} - \theta_{\rm true}$','Interpreter','latex','FontSize',13);
+xlabel('$S$','Interpreter','latex'); ylabel('$t$','Interpreter','latex');
+zlabel('Error','Interpreter','latex');
+colorbar;
