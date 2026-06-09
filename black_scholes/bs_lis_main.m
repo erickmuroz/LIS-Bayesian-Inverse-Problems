@@ -119,6 +119,32 @@ fprintf('Frobenius error approx vs projected = %.2e\n', frob_error_projected);
 %to what you get it you simply project the forward operator onto the r most
 %likelihood informed directions, two completely different paths, to the
 %same result
+
+%% 9. rank r approximate posterior mean + convergence
+mu_pos_approx = zeros(n, r_max);   % store all rank-r means
+
+for r = 1:r_max
+    % rank-r projector (already built incrementally, rebuild cleanly here)
+    P_r_loop = zeros(n, n);
+    for i = 1:r
+        P_r_loop = P_r_loop + W_hat(:,i) * W_tilde(:,i)';
+    end
+
+    % projected forward operator
+    G_r_loop = G * P_r_loop;
+
+    % rank-r posterior mean
+    H_r_loop  = G_r_loop' * Gamma_obs_inv * G_r_loop;
+    Gpos_r    = Gamma_pos_approx_all{r};
+    mu_pos_approx(:,r) = theta_star + Gpos_r * G_r_loop' * Gamma_obs_inv * (y - F0); %actual comp
+end
+
+% convergence error
+signal_norm = norm(mu_pos - theta_star);   % normalization
+mean_errors = zeros(r_max, 1);
+for r = 1:r_max
+    mean_errors(r) = norm(mu_pos_approx(:,r) - mu_pos) / signal_norm;
+end
  
 %% -----------------------------------------------------------------------
 %% PLOTS
@@ -263,7 +289,7 @@ title('Relative uncertainty reduction per vol surface parameter', ...
 ylim([0 1.1]); box off; set(gca, 'FontSize', 12);
 
 
-%mean
+%% mean what did i recover
 
 figure;
 t5 = tiledlayout(1,3,'Padding','compact','TileSpacing','compact');
@@ -286,3 +312,37 @@ title('Error $\mu_{pos} - \theta_{\rm true}$','Interpreter','latex','FontSize',1
 xlabel('$S$','Interpreter','latex'); ylabel('$t$','Interpreter','latex');
 zlabel('Error','Interpreter','latex');
 colorbar;
+
+%% w hat LIs directions
+figure;
+t_lis = tiledlayout(1, r_plot, 'Padding','compact','TileSpacing','compact');
+for i = 1:r_plot
+    nexttile;
+    w_surface = reshape(W_hat(:,i), length(t_vol_grid), length(S_vol_grid));
+    surf(S_vol_grid, t_vol_grid, w_surface);
+    title(['$\hat{w}_{' num2str(i) '}$'], 'Interpreter','latex','FontSize',13);
+    xlabel('$S$','Interpreter','latex','FontSize',11);
+    ylabel('$t$','Interpreter','latex','FontSize',11);
+    zlabel('weight','FontSize',10);
+    colorbar;
+    set(gca,'FontSize',10);
+end
+sgtitle('LIS directions in vol surface space', 'Interpreter','latex','FontSize',14);
+
+
+%% rank r mean convergence
+figure;
+semilogy(1:r_max, mean_errors, 'o-', ...
+    'LineWidth', 2, 'Color', [0.2 0.2 0.6], ...
+    'MarkerFaceColor', [0.2 0.2 0.6], 'MarkerSize', 6);
+hold on;
+xline(r_plot, '--', 'Color', [0.7 0.1 0.1], 'LineWidth', 1.5);
+text(r_plot + 0.2, max(mean_errors)*0.5, ...
+    ['$r^* = ' num2str(r_plot) '$'], ...
+    'Interpreter','latex','FontSize',11,'Color',[0.7 0.1 0.1]);
+box off;
+set(gca,'FontSize',13);
+xlabel('Rank $r$', 'Interpreter','latex','FontSize',14);
+ylabel('Relative error', 'Interpreter','latex','FontSize',14);
+title('Rank-$r$ posterior mean convergence $\|\mu_{pos}^{(r)} - \mu_{pos}\| / \|\mu_{pos} - \theta_\star\|$', ...
+    'Interpreter','latex','FontSize',14);
