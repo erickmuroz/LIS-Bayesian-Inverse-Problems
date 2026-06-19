@@ -12,7 +12,7 @@ t_pts = t_mat(:);
 n = length(S_pts);
 
 % Hyperparameters  financially motivated (Cont & da Fonseca 2002)
-alpha = 0.05;   % prior std: vol can deviate ~5% from baseline
+alpha = 0.5;   % prior std: vol can deviate ~50% from baseline
 ell_S = 30;     % length scale in S: correlation decays over ~30 price units
 ell_t = 0.75;   % length scale in t: correlation decays over ~0.75 years
 
@@ -22,8 +22,7 @@ for j = 1:n
     for k = 1:n
         dS = S_pts(j) - S_pts(k);
         dt = t_pts(j) - t_pts(k);
-        Gamma_pr(j,k) = alpha^2 * exp(-dS^2/(2*ell_S^2) ...
-            -dt^2/(2*ell_t^2));
+        Gamma_pr(j,k) = alpha^2 * exp(-dS^2/(2*ell_S^2)-dt^2/(2*ell_t^2));
     end
 end
 

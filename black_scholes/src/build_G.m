@@ -7,8 +7,14 @@
 %(flat surface at 0.20)
 
 function [G, F0, contracts] = build_G(S0, r, theta_star, S_vol_grid, t_vol_grid, N_S, N_t)
+%Inputs: market parameters S0 and r, linearization point (flat surface at
+%0.2, maybe i will change it), parameter grids, and FD grid resolution NS
+%and NT
+%Outputs: G as a Jacobian, F0 (baselines prices F(theta star), contracts
+
+
 %define m contracts
-K_contracts = [70, 85, 100, 115, 130];
+K_contracts = [70, 85, 100, 115, 130]; %span from ITM to OTM relative to S0=100
 T_contracts = [0.25, 0.5, 1.0];
 [K_mat, T_mat] = meshgrid(K_contracts, T_contracts);
 contracts.K = K_mat(:);

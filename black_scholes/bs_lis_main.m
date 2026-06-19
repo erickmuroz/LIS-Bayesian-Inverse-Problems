@@ -14,12 +14,12 @@ r  = 0.05; %annual risk free rate
 %% 1. true vol surface
 % establishes the ground truth/reference, i.e. the vol surface you are
 % trying to infer
-[~, theta_true, S_vol_grid, t_vol_grid] = build_sigma(S0);
-n = length(theta_true);
+[~, theta_true, S_vol_grid, t_vol_grid] = build_sigma(S0); %define the parameter space, grids on which theta lives. Everything is built on this grids
+n = length(theta_true); %synthetic true vol surface I am trying to recover 
  
 %% 2. build G (or load if already saved)
 %computes the linearized Forward operator G
-theta_star = 0.20 * ones(n, 1); %linearization point at flat surface (0.2), consider to change it 
+theta_star = mean(theta_true)*ones(n,1); %linearization point at flat surface (0.28), much closer to theta_true on avg, linearization error shrinks
 N_S = 200; N_t = 200; %grid resolution
  
 if exist('G_matrix.mat', 'file')
@@ -42,7 +42,7 @@ G = G_bs; %Jacobian as the forward operator
 Gamma_pr = build_prior(S_vol_grid, t_vol_grid);
  
 % Observation noise
-noise_std  = 1.0; 
+noise_std  = 0.7; 
 Gamma_obs  = noise_std^2 * eye(m); %assuming all contracts have the same noise level
  
 % Synthetic observations from linearized model

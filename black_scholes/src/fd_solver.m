@@ -55,5 +55,5 @@ for k = N_t:-1:1
     V(end) = S_max - K*exp(-r*t_current);
 end
 
-price = interp1(S, V, S0, 'linear');
+price = interp1(S, V, S0, 'linear'); %with equally spaced ∆S, a specific S0 is almost certainly not in ont of those points, linear interpolation between two grid points surrounding S0 
 end
