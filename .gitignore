@@ -2,3 +2,6 @@
 *.asv
 *.mat
 *.mat
+.DS_Store
+*.asv
+*.pdf
