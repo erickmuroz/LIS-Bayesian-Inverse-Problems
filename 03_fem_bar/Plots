@@ -1,0 +1,35 @@
+Figure 1: 
+- semilogy plot of the eigenvalue spectrum
+- after r*=2 all other directions live under the threshold delta_i^2 =1 
+- The data inform only 2 directions of the 100-dimensional load space
+
+Figure 4: 
+- prior: shows clearlyy the load belief before seeing anything: bright band
+ along the diagnoal with a smooth decay
+- posterior: shows uncertainty after seeing the data
+- OLR approx: this is Gamma_pos_approx_all{r_plot}, the posterior keeping 
+only 2 informed directions - pretty similar to Exact pos
+
+Figure 7: 
+- panel 1: synthetic ground truth, flat 4MN/m baseline + gaussian bump
+- panel 2: recovered posterior mean (best estimate from the noisy sensor) 
+- panel 3: mu_pos - theta_true
+
+- Because only 2 directions are informed, the recovery cannot reproduce 
+every local detail of the true load(only here the presence of the central
+bump)
+- regions far from the sensor will show where the recovery is blind (contracts.node)
+gives the node indices, and contracts.z gives the physical position along the
+2m bar
+
+Figure 8: 
+- each v_i is plotted agains z, gets a spatial load pattern (shape of 
+distributed load along the bar. 
+- the plotted directions are the r* directions which are: if the load looks like
+v_1, it would be detected strongly, a load that is orthogoanl to v_i will be
+invisible to the sensors. 
+- figure 7 would be a weighted sum of all the direction shapes (+ mu_pr)
+
+
+Figure 9:
+-  
